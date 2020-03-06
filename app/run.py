@@ -1,5 +1,4 @@
-import os
-from flask import Flask, render_template, jsonify, request, make_response, current_app, g, redirect, url_for
+from flask import Flask, render_template, jsonify, request, make_response, current_app, g
 from random import *
 from flask_cors import CORS
 from functools import wraps
@@ -7,9 +6,10 @@ from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 from flask_httpauth import HTTPBasicAuth, HTTPTokenAuth
 from werkzeug.security import generate_password_hash
 
+# -----------------------------------setting begin--------------------------------------------
 app = Flask(__name__,
-            static_folder="../dist/static",  # 设置静态文件夹目录
-            template_folder="../dist")  # 设置vue编译输出目录dist文件夹，为Flask模板文件目录
+            static_folder="../../dist/static",  # 设置静态文件夹目录
+            template_folder="../../dist")  # 设置vue编译输出目录dist文件夹，为Flask模板文件目录
 app.config.from_object('config')
 CORS(app, supports_credentials=True)
 
@@ -22,49 +22,50 @@ def after_request(resp):
     resp.headers['Access-Control-Allow-Methods'] = 'GET,POST'
     resp.headers['Access-Control-Allow-Headers'] = 'content-type,Authorization'
     return resp
+# -----------------------------------setting end--------------------------------------------
 
 
 # -----------------------------------auth begin--------------------------------------------
-def auth_login(view_func):
-    @wraps(view_func)
-    def verify_token(*args, **kwargs):
-        try:
-            # 在请求头上拿到token
-            token = request.headers["Authorization"]
-        except Exception:
-            # 没接收的到token,给前端抛出错误
-            # 这里的code推荐写一个文件统一管理。这里为了看着直观就先写死了。
-            return jsonify(code=4103, msg='缺少参数token')
-
-        serializer = Serializer(current_app.config['SECRET_KEY'])
-        try:
-            data = serializer.loads(token)
-        except Exception:
-            # return redirect(url_for('login'))
-            return jsonify(code=4101, msg="登录已过期")
-
-        return view_func(*args, **kwargs)
-        # return view_func(*args, **kwargs)
-
-    return verify_token
-
-
-# auth = HTTPTokenAuth(scheme='Bearer')
+# 自定义token 验证装饰器
+# def auth_login(func):
+#     @wraps(func)
+#     def verify_token(*args, **kwargs):
+#         try:
+#             # 在请求头上拿到token
+#             token = request.headers["Authorization"]
+#         except Exception:
+#             # 没接收到token
+#             # 但是前端其实已经做了token非空处理，这里不是很必要
+#             return jsonify(code=4103, msg='header缺少参数token')
 #
+#         serializer = Serializer(current_app.config['SECRET_KEY'])
+#         try:
+#             data = serializer.loads(token)
+#         except Exception:
+#             # token解析失败（过期）
+#             return jsonify(code=4101, msg="登录已过期")
 #
-# @auth.verify_token
-# def verify_token(token):
-#     token = request.headers.get('Authorization')
-#     print("what have I get?: ", token)
-#     g.user = None
-#     return TokenTool.verify_auth_token(token)
+#         return func(*args, **kwargs)
+#     return verify_token
 
 
+auth = HTTPTokenAuth(scheme='Bearer')
+
+
+@auth.verify_token
+def verify_token(token):
+    serializer = Serializer(current_app.config['SECRET_KEY'])
+    try:
+        serializer.loads(token)
+    except Exception:
+        return False
+    return True
 # -----------------------------------auth  end--------------------------------------------
 
 # 随机数test
 @app.route('/api/random')
-@auth_login
+# @auth_login
+@auth.login_required
 def random_number():
     response = {
         'randomNumber': randint(1, 100)
@@ -74,9 +75,10 @@ def random_number():
 
 # token验证
 @app.route('/api/authCheck')
-@auth_login
+# @auth_login
+@auth.login_required
 def authCheck():
-    pass
+    return jsonify({'msg': 'ok'})
 
 
 # 登录验证
@@ -137,9 +139,10 @@ class TokenTool:
     @staticmethod
     def generate_auth_token(expiration=1800):
         serializer = Serializer(app.config['SECRET_KEY'], expires_in=expiration)
-        token = serializer.dumps({'username': 'Cisco'}).decode('utf-8')
+        token = serializer.dumps({'username': 'Cisco', 'random': randint(1, 100)}).decode('utf-8')
         return token
 
+    # 暂时没被用到
     @staticmethod
     def verify_auth_token(token):
         serializer = Serializer(app.config['SECRET_KEY'])

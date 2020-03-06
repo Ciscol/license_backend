@@ -1,5 +1,8 @@
 .DS_Store
 /venv
+*.pem
+license_data.json
+signature_file.json
 
 # local env files
 .env.local
