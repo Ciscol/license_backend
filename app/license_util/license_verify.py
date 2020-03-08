@@ -1,6 +1,9 @@
 import json
-from app.rsa_manage.rsa_tool import decrypt, sign, get_publicKey, get_privateKey, sign_verify
-from . import get_print
+from .get_print import get_print
+from app.rsa_util.rsa_tool import decrypt, get_publicKey, get_privateKey, sign_verify
+import os
+path = os.path.dirname(__file__)
+licenseFile = os.path.join(path, 'license_data.json')
 
 
 # 验证license
@@ -11,7 +14,7 @@ def license_verify():
     message = get_print()
 
     # 获取license数据
-    with open('./license_data.json', 'r') as f:
+    with open(licenseFile, 'r') as f:
         result = json.loads(f.read())
     print('license:', '\n', result, '\n')
 
@@ -20,24 +23,32 @@ def license_verify():
     signature_message = result['license_data']['signature_message']
     verify = sign_verify(pubKey, signature, signature_message)
     if not verify:
-        return 'Signature Error'
+        ex = Exception('Signature Error.')
+        raise ex
 
     # 密文验证
     crypto = result['license_data']['crypto'].encode('utf-8')
     try:
         decrypto = decrypt(priKey, crypto)
     except Exception:
-        return 'Decryption Error'
+        ex = Exception('Message Decryption Error.')
+        raise ex
     print('decrypto:', '\n', decrypto, '\n')
     if decrypto != message:
-        return 'Message Error'
+        ex = Exception('Message Error.')
+        raise ex
 
     # 有效期验证
     crypto = result['license_data']['valid_date'].encode('utf-8')
-    valid_date = decrypt(priKey, crypto)
+    try:
+        valid_date = decrypt(priKey, crypto)
+    except Exception:
+        ex = Exception('Valid-Date Decryption Error.')
+        raise ex
     print('valid_date:', '\n', valid_date, '\n')
     # if valid_date < curr_date:
-    #     return 'Date Exceeded'
+        # ex = Exception('Date Exceeded')
+        # raise ex
 
     return True
 

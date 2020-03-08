@@ -1,7 +1,9 @@
 import rsa
 import base64
-import json
-
+import os
+path = os.path.dirname(__file__)
+pubFile = os.path.join(path, 'public.pem')
+priFile = os.path.join(path, 'private.pem')
 
 # 生成密钥
 def create_keys():
@@ -12,25 +14,25 @@ def create_keys():
 
     # 写入文件
     pub = pubKey.save_pkcs1()
-    with open('public.pem', 'wb+')as f:
+    with open(pubFile, 'wb+')as f:
         f.write(pub)
     pri = priKey.save_pkcs1()
-    with open('private.pem', 'wb+')as f:
+    with open(priFile, 'wb+')as f:
         f.write(pri)
 
 
 # 获取公钥
 def get_publicKey():
-    with open('public.pem', 'rb') as pubFile:
-        pub = pubFile.read()
+    with open(pubFile, 'rb') as f:
+        pub = f.read()
     pubKey = rsa.PublicKey.load_pkcs1(pub)
     return pubKey
 
 
 # 获取私钥
 def get_privateKey():
-    with open('private.pem', 'rb') as priFile:
-        pri = priFile.read()
+    with open(priFile, 'rb') as f:
+        pri = f.read()
     priKey = rsa.PrivateKey.load_pkcs1(pri)
     return priKey
 
