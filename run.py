@@ -53,10 +53,19 @@ def login():
         return unauthorized('Invalid license. ' + str(ex))
     token = TokenTool.generate_auth_token()
     response = {
-        'state': 1,
         'token': token,
     }
     return response
+
+
+# license生成
+@app.route('/api/generate', methods=['POST'])
+def generate():
+    try:
+        license_generate.license_generate()
+    except Exception as ex:
+        return unauthorized('Generate license failed. ' + str(ex))
+    return jsonify({'msg': 'ok'})
 
 
 # 测试接口
@@ -96,17 +105,6 @@ def bad_request(message):
     response = jsonify({'error': 'bad request', 'message': message})
     response.status_code = 400
     return response
-
-
-@app.errorhandler(404)
-def page_not_found(e):
-    if request.accept_mimetypes.accept_json:
-        response = jsonify({'error': 'not found'})
-        response.status_code = 404
-        return response
-    return '404', 404
-
-
 # -----------------------------------error  end  --------------------------------------------
 
 
