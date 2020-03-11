@@ -1,8 +1,4 @@
 .DS_Store
-/venv
-*.pem
-license_data.json
-signature_file.json
 
 # local env files
 .env.local
@@ -22,3 +18,9 @@ __pycache__
 *.njsproj
 *.sln
 *.sw?
+/venv
+*.pem
+license_data.json
+signature_file.json
+sysInfo.json
+logs

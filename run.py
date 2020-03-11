@@ -1,14 +1,22 @@
-from flask import Flask, render_template, jsonify, request, make_response, current_app, g
+from flask import Flask, render_template, jsonify, request, make_response, current_app, g, logging
 from random import *
 from flask_cors import CORS
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
+import logging
+from logging.handlers import RotatingFileHandler
 from flask_httpauth import HTTPBasicAuth, HTTPTokenAuth
 from app.license_util import license_generate, license_verify
 
-# license_generate.license_generate()
-# license_verify.license_verify()
 
 # -----------------------------------setting begin--------------------------------------------
+logging.basicConfig(level=logging.DEBUG)
+file_log_handler = RotatingFileHandler('logs', maxBytes=1024 * 1024, backupCount=10)
+formatter = logging.Formatter('%(levelname)s %(filename)s %(lineno)d %(message)s')
+file_log_handler.setFormatter(formatter)
+# 为全局的日志工具对象添加日志记录器
+logging.getLogger().addHandler(file_log_handler)
+
+
 app = Flask(__name__,
             static_folder="../dist/static",  # 设置静态文件夹目录
             template_folder="../dist")  # 设置vue编译输出目录dist文件夹，为Flask模板文件目录
@@ -62,7 +70,7 @@ def login():
 @app.route('/api/generate', methods=['POST'])
 def generate():
     try:
-        license_generate.license_generate()
+        license_generate.license_generate(60)
     except Exception as ex:
         return unauthorized('Generate license failed. ' + str(ex))
     return jsonify({'msg': 'ok'})

@@ -2,13 +2,15 @@ import json
 from .sysInfo import get_sysInfo
 from app.rsa_util.rsa_tool import encrypt, sign, get_publicKey, get_privateKey
 from hashlib import md5
+from datetime import datetime, timedelta
 import os
+
 path = os.path.dirname(__file__)
 licenseFile = os.path.join(path, 'license_data.json')
 
 
 # 生成license
-def license_generate():
+def license_generate(valid_seconds=60):
     try:
         pubKey = get_publicKey()
         priKey = get_privateKey()
@@ -16,8 +18,9 @@ def license_generate():
         # 设备指纹
         sysInfo = encrypt(pubKey, get_sysInfo())
 
-        # 应当为当地时间 + 有效时长
-        valid_date = encrypt(pubKey, '2020-03-08')
+        # 应当为当地时间 + 有效时长(seconds)
+        valid_date = datetime.strftime(datetime.now() + timedelta(seconds=valid_seconds), '%Y-%m-%d %H: %M: %S')
+        valid_date = encrypt(pubKey, valid_date)
 
         content = {
             'sysInfo': str(sysInfo, 'utf-8'),
@@ -33,10 +36,10 @@ def license_generate():
             'content': content,
             'signature': signature
         }
-        
+
         with open(licenseFile, 'w') as f:
-            json.dump(license_data, f, indent=4, separators=(',', ': '))
-            # json.dump(result, f)
+            # json.dump(license_data, f, indent=4, separators=(',', ': '))
+            json.dump(license_data, f)
         print('license:', '\n', license_data)
         return True
     except Exception as ex:

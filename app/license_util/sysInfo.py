@@ -7,7 +7,7 @@ import os
 from hashlib import md5
 
 path = os.path.dirname(__file__)
-sysInfoFile = os.path.join(path, 'sys.info')
+sysInfoFile = os.path.join(path, 'sysInfo.json')
 
 c = wmi.WMI()
 
@@ -53,18 +53,16 @@ def create_sysInfo():
     with open(sysInfoFile, 'w') as f:
         # json.dump(sysInfo, f, indent=4, separators=(',', ': '))
         json.dump(sysInfo, f)
-    
+
     return sysInfo
 
 
 # 获取设备指纹
 def get_sysInfo():
     sysInfo = create_sysInfo()
-    # with open(sysInfoFile, 'r') as f:
-    #     result = md5(bytes(f.read(), 'utf-8')).hexdigest()
-    # return result
     result = md5(bytes(str(sysInfo), 'utf-8')).hexdigest()
     return result
+
 
 if __name__ == '__main__':
     create_sysInfo()
