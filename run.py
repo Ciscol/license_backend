@@ -1,12 +1,13 @@
-from flask import Flask, render_template, jsonify, request, make_response, current_app, g, logging
+import json
+
+from flask import Flask, render_template, jsonify, request, make_response, current_app, logging
 from random import *
 from flask_cors import CORS
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 import logging
 from logging.handlers import RotatingFileHandler
-from flask_httpauth import HTTPBasicAuth, HTTPTokenAuth
+from flask_httpauth import HTTPTokenAuth
 from app.license_util import license_generate, license_verify
-
 
 # -----------------------------------setting begin--------------------------------------------
 logging.basicConfig(level=logging.DEBUG)
@@ -15,7 +16,6 @@ formatter = logging.Formatter('%(levelname)s %(filename)s %(lineno)d %(message)s
 file_log_handler.setFormatter(formatter)
 # 为全局的日志工具对象添加日志记录器
 logging.getLogger().addHandler(file_log_handler)
-
 
 app = Flask(__name__,
             static_folder="../dist/static",  # 设置静态文件夹目录
@@ -32,15 +32,20 @@ def after_request(resp):
     resp.headers['Access-Control-Allow-Methods'] = 'GET,POST'
     resp.headers['Access-Control-Allow-Headers'] = 'content-type,Authorization'
     return resp
+
+
 # -----------------------------------setting end--------------------------------------------
 
 
 # -----------------------------------auth begin--------------------------------------------
 auth = HTTPTokenAuth(scheme='Bearer')
 
+
 @auth.verify_token
 def verify_token(token):
     return TokenTool.verify_auth_token(token)
+
+
 # -----------------------------------auth end--------------------------------------------
 
 
@@ -56,10 +61,10 @@ def authCheck():
 @app.route('/api/login', methods=['POST'])
 def login():
     try:
-        license_verify.license_verify()
+        user = license_verify.license_verify()
     except Exception as ex:
         return unauthorized('Invalid license. ' + str(ex))
-    token = TokenTool.generate_auth_token()
+    token = TokenTool.generate_auth_token(600, user)
     response = {
         'token': token,
     }
@@ -69,8 +74,13 @@ def login():
 # license生成
 @app.route('/api/generate', methods=['POST'])
 def generate():
+    data = request.get_data()
+    data = json.loads(data)['data']
+    username = data['username']
+    valid_seconds = data['valid_seconds']
+    modules = data['modules']
     try:
-        license_generate.license_generate(60)
+        license_generate.license_generate(username, valid_seconds, modules)
     except Exception as ex:
         return unauthorized('Generate license failed. ' + str(ex))
     return jsonify({'msg': 'ok'})
@@ -90,9 +100,11 @@ def random_number():
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 # @auth_login
-def catch_all(path):
+def catch_all():
     # 使用模板插件，引入index.html。此处会自动Flask模板文件目录寻找index.html文件。
     return render_template("index.html", name="index")
+
+
 # -----------------------------------routes  end--------------------------------------------
 
 
@@ -113,6 +125,8 @@ def bad_request(message):
     response = jsonify({'error': 'bad request', 'message': message})
     response.status_code = 400
     return response
+
+
 # -----------------------------------error  end  --------------------------------------------
 
 
@@ -120,19 +134,21 @@ def bad_request(message):
 # token生成验证工具 后续应存储于数据库
 class TokenTool:
     @staticmethod
-    def generate_auth_token(expiration=1800):
+    def generate_auth_token(expiration=1800, user=None):
+        if user is None:
+            user = {}
         serializer = Serializer(app.config['SECRET_KEY'], expires_in=expiration)
-        token = serializer.dumps({'username': 'Cisco', 'random': randint(1, 100)}).decode('utf-8')
+        token = serializer.dumps(user).decode('utf-8')
         return token
 
-    # 暂时没被用到
     @staticmethod
     def verify_auth_token(token):
         serializer = Serializer(current_app.config['SECRET_KEY'])
         try:
-            serializer.loads(token)
+            modules = serializer.loads(token)
         except Exception:
             return False
+        # logging.info(modules)
         return True
 
 # -----------------------------------end----------------------------------------------------

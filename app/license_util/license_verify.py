@@ -1,9 +1,10 @@
 import json
 import time
-from datetime import datetime, timedelta
+from datetime import datetime
 from .sysInfo import get_sysInfo
 from app.rsa_util.rsa_tool import decrypt, get_publicKey, get_privateKey, sign_verify
 import os
+
 path = os.path.dirname(__file__)
 licenseFile = os.path.join(path, 'license_data.json')
 
@@ -24,7 +25,9 @@ def license_verify():
     license_content = result['content']
     license_signature = result['signature']
     license_sysInfo = license_content['sysInfo']
+    license_username = license_content['username']
     license_valid_date = license_content['valid_date']
+    license_modules = license_content['valid_modules']
 
     # 数字签名验证
     verification = sign_verify(pubKey, license_signature, str(license_content))
@@ -37,11 +40,11 @@ def license_verify():
     try:
         decrypto = decrypt(priKey, crypto)
     except Exception:
-        ex = Exception('Message Decryption Error.')
+        ex = Exception('SysInfo Decryption Error.')
         raise ex
     print('decrypto:', '\n', decrypto, '\n')
     if decrypto != sysInfo:
-        ex = Exception('Message Error.')
+        ex = Exception('SysInfo Error.')
         raise ex
 
     # 有效期验证
@@ -52,13 +55,30 @@ def license_verify():
         ex = Exception('Valid-Date Decryption Error.')
         raise ex
     try:
-        if is_valid_date(valid_date):
-            return True
-        else:
-            ex = Exception('Date Exceeded')
+        if not is_valid_date(valid_date):
+            ex = Exception('Date Expired')
             raise ex
     except Exception as ex:
         raise ex
+
+    # 有效模块
+    license_modules = license_modules.encode('utf-8')
+    try:
+        license_modules = decrypt(priKey, license_modules)
+    except Exception:
+        ex = Exception('Modules Decryption Error.')
+        raise ex
+    license_modules = json.loads(license_modules.replace("'", "\""))
+
+    # 用户名
+    license_username = license_username.encode('utf-8')
+    try:
+        license_username = decrypt(priKey, license_username)
+    except Exception:
+        ex = Exception('username Decryption Error.')
+        raise ex
+
+    return {'username': license_username, 'modules': license_modules, 'valid_date': valid_date}
 
 
 def is_valid_date(timestr):

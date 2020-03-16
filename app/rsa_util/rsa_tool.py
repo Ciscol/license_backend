@@ -1,9 +1,11 @@
 import rsa
 import base64
 import os
+
 path = os.path.dirname(__file__)
 pubFile = os.path.join(path, 'public.pem')
 priFile = os.path.join(path, 'private.pem')
+
 
 # 生成密钥
 def create_keys():
@@ -60,8 +62,7 @@ def sign(privateKey, message):
 def sign_verify(publicKey, signature, message):
     try:
         signature = base64.b64decode(signature)
-        method_name = rsa.verify(message.encode('utf-8'), signature, publicKey)
-        # print('method_name:', method_name)
+        rsa.verify(message.encode('utf-8'), signature, publicKey)
     except Exception:
         return False
     return True
