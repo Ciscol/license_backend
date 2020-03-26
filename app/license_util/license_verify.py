@@ -6,7 +6,7 @@ from app.rsa_util.rsa_tool import decrypt, get_publicKey, get_privateKey, sign_v
 import os
 
 path = os.path.dirname(__file__)
-licenseFile = os.path.join(path, 'license_data.json')
+licenseFile = os.path.join(path, 'license.data')
 
 
 # 验证license
@@ -35,7 +35,7 @@ def license_verify():
         ex = Exception('Signature Error.')
         raise ex
 
-    # 密文验证
+    # 设备指纹验证
     crypto = license_sysInfo.encode('utf-8')
     try:
         decrypto = decrypt(priKey, crypto)

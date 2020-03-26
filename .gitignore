@@ -20,7 +20,7 @@ __pycache__
 *.sw?
 /venv
 *.pem
-license_data.json
-signature_file.json
-sysInfo.json
+license.data
+sys.info
 logs
+signature_file.json

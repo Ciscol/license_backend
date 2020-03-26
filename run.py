@@ -28,7 +28,8 @@ CORS(app, supports_credentials=True)
 @app.after_request
 def after_request(resp):
     resp = make_response(resp)
-    resp.headers['Access-Control-Allow-Origin'] = 'http://127.0.0.1:8080'
+    # resp.headers['Access-Control-Allow-Origin'] = '*'
+    resp.headers['Access-Control-Allow-Origin'] = 'http://127.0.0.1:5000'
     resp.headers['Access-Control-Allow-Methods'] = 'GET,POST'
     resp.headers['Access-Control-Allow-Headers'] = 'content-type,Authorization'
     return resp
@@ -63,7 +64,7 @@ def login():
     try:
         user = license_verify.license_verify()
     except Exception as ex:
-        return unauthorized('Invalid license. ' + str(ex))
+        return forbidden('Invalid license. ' + str(ex))
     token = TokenTool.generate_auth_token(600, user)
     response = {
         'token': token,
@@ -86,6 +87,39 @@ def generate():
     return jsonify({'msg': 'ok'})
 
 
+# 前端获取license信息
+@app.route('/api/licenseMassage', methods=['GET'])
+@auth.login_required
+def get_license_massage():
+    token = request.headers.get('Authorization')[7:]
+    try:
+        user = TokenTool.get_token_message(token)
+    except Exception:
+        return unauthorized('token is needed')
+    response = {
+        'modules': user['modules'],
+        'valid_date': user['valid_date']
+    }
+    return response
+
+
+# 模块鉴权
+@app.route('/api/moduleAccess', methods=['POST'])
+@auth.login_required
+def module_access_check():
+    token = request.headers.get('Authorization')[7:]
+    try:
+        user = TokenTool.get_token_message(token)
+    except Exception:
+        return unauthorized('token is needed')
+    modules = user['modules']
+    data = request.get_data()
+    moduleName = json.loads(data)['data']['moduleName']
+    if moduleName in modules:
+        return {'access': True}
+    return {'access': False}
+
+
 # 测试接口
 @app.route('/api/random')
 @auth.login_required
@@ -100,11 +134,9 @@ def random_number():
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 # @auth_login
-def catch_all():
+def catch_all(path):
     # 使用模板插件，引入index.html。此处会自动Flask模板文件目录寻找index.html文件。
     return render_template("index.html", name="index")
-
-
 # -----------------------------------routes  end--------------------------------------------
 
 
@@ -119,14 +151,6 @@ def unauthorized(message):
     response = jsonify({'error': 'unauthorized', 'message': message})
     response.status_code = 401
     return response
-
-
-def bad_request(message):
-    response = jsonify({'error': 'bad request', 'message': message})
-    response.status_code = 400
-    return response
-
-
 # -----------------------------------error  end  --------------------------------------------
 
 
@@ -145,11 +169,19 @@ class TokenTool:
     def verify_auth_token(token):
         serializer = Serializer(current_app.config['SECRET_KEY'])
         try:
-            modules = serializer.loads(token)
+            user = serializer.loads(token)
         except Exception:
             return False
-        # logging.info(modules)
         return True
+
+    @staticmethod
+    def get_token_message(token):
+        serializer = Serializer(current_app.config['SECRET_KEY'])
+        try:
+            user = serializer.loads(token)
+        except Exception as ex:
+            raise ex
+        return user
 
 # -----------------------------------end----------------------------------------------------
 

@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 import os
 
 path = os.path.dirname(__file__)
-licenseFile = os.path.join(path, 'license_data.json')
+licenseFile = os.path.join(path, 'license.data')
 
 
 # 生成license
@@ -46,8 +46,8 @@ def license_generate(username='', valid_seconds=60, modules=None):
             'signature': signature
         }
         with open(licenseFile, 'w') as f:
-            # json.dump(license_data, f, indent=4, separators=(',', ': '))
-            json.dump(license_data, f)
+            json.dump(license_data, f, indent=4, separators=(',', ': '))
+            # json.dump(license_data, f)
         # print('license:', '\n', license_data)
         return True
     except Exception as ex:
