@@ -1,11 +1,11 @@
 import json
 from .sysInfo import get_sysInfo
-from app.rsa_util.rsa_tool import encrypt, sign, get_publicKey, get_privateKey
+from app.crypto_util import rsa_tool, des3_tool
 from datetime import datetime, timedelta
 import os
 
 path = os.path.dirname(__file__)
-licenseFile = os.path.join(path, 'license.data')
+licenseFile = os.path.join(path, 'license.lic')
 
 
 # 生成license
@@ -13,32 +13,29 @@ def license_generate(username='', valid_seconds=60, modules=None):
     if modules is None:
         modules = []
     try:
-        pubKey = get_publicKey()
-        priKey = get_privateKey()
-
-        # 用户名
-        username = encrypt(pubKey, username)
+        priKey = rsa_tool.get_privateKey()
 
         # 设备指纹
-        sysInfo = encrypt(pubKey, get_sysInfo())
+        sysInfo = get_sysInfo()
 
         # 有效时长
         valid_date = date_adder(valid_seconds)
-        valid_date = encrypt(pubKey, valid_date)
+        valid_date = des3_tool.encrypt(valid_date)
+        valid_date = str(valid_date, 'utf-8')
 
         # 模块
-        modules = encrypt(pubKey, str(modules))
+        modules = str(modules)
 
         # license part1 —— 主体内容
         content = {
-            'username': str(username, 'utf-8'),
-            'sysInfo': str(sysInfo, 'utf-8'),
-            'valid_date': str(valid_date, 'utf-8'),
-            'valid_modules': str(modules, 'utf-8')
+            'username': username,
+            'sysInfo': sysInfo,
+            'valid_date': valid_date,
+            'valid_modules': modules
         }
 
         # license part2 —— 数字签名
-        signature = str(sign(priKey, str(content)), 'utf-8')
+        signature = str(rsa_tool.sign(priKey, str(content)), 'utf-8')
 
         # license数据生成并写入文件
         license_data = {

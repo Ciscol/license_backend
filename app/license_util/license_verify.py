@@ -2,17 +2,16 @@ import json
 import time
 from datetime import datetime
 from .sysInfo import get_sysInfo
-from app.rsa_util.rsa_tool import decrypt, get_publicKey, get_privateKey, sign_verify
+from app.crypto_util import rsa_tool, des3_tool
 import os
 
 path = os.path.dirname(__file__)
-licenseFile = os.path.join(path, 'license.data')
+licenseFile = os.path.join(path, 'license.lic')
 
 
 # 验证license
 def license_verify():
-    pubKey = get_publicKey()
-    priKey = get_privateKey()
+    pubKey = rsa_tool.get_publicKey()
 
     # 设备指纹
     sysInfo = get_sysInfo()
@@ -30,27 +29,21 @@ def license_verify():
     license_modules = license_content['valid_modules']
 
     # 数字签名验证
-    verification = sign_verify(pubKey, license_signature, str(license_content))
+    verification = rsa_tool.sign_verify(pubKey, license_signature, str(license_content))
     if not verification:
         ex = Exception('Signature Error.')
         raise ex
 
     # 设备指纹验证
-    crypto = license_sysInfo.encode('utf-8')
-    try:
-        decrypto = decrypt(priKey, crypto)
-    except Exception:
-        ex = Exception('SysInfo Decryption Error.')
-        raise ex
-    print('decrypto:', '\n', decrypto, '\n')
-    if decrypto != sysInfo:
+    if license_sysInfo != sysInfo:
         ex = Exception('SysInfo Error.')
         raise ex
 
     # 有效期验证
-    crypto = license_valid_date.encode('utf-8')
+    license_valid_date = license_valid_date.encode('utf-8')
     try:
-        valid_date = decrypt(priKey, crypto)
+        valid_date = des3_tool.decrypt(license_valid_date)
+        valid_date = str(valid_date, 'utf-8')
     except Exception:
         ex = Exception('Valid-Date Decryption Error.')
         raise ex
@@ -62,21 +55,7 @@ def license_verify():
         raise ex
 
     # 有效模块
-    license_modules = license_modules.encode('utf-8')
-    try:
-        license_modules = decrypt(priKey, license_modules)
-    except Exception:
-        ex = Exception('Modules Decryption Error.')
-        raise ex
     license_modules = json.loads(license_modules.replace("'", "\""))
-
-    # 用户名
-    license_username = license_username.encode('utf-8')
-    try:
-        license_username = decrypt(priKey, license_username)
-    except Exception:
-        ex = Exception('username Decryption Error.')
-        raise ex
 
     return {'username': license_username, 'modules': license_modules, 'valid_date': valid_date}
 
