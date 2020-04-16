@@ -4,7 +4,7 @@ import base64
 # 密钥
 KEY = "PxFJTX5De/3Ta"
 
-# AES根据16位对齐
+# 3DES根据16位对齐
 BS = 16
 
 
@@ -35,8 +35,8 @@ def auto_fill(x):
 
 
 # 加密
-def encrypt(message):
-    key = auto_fill(KEY)
+def encrypt(message, key=KEY):
+    key = auto_fill(key)
     message = pad(message)
     cipher = Crypto.Cipher.DES3.new(key, Crypto.Cipher.DES3.MODE_ECB)
     crypto = base64.encodebytes(cipher.encrypt(message))
@@ -44,8 +44,8 @@ def encrypt(message):
 
 
 # 解密
-def decrypt(crypto):
-    key = auto_fill(KEY)
+def decrypt(crypto, key=KEY):
+    key = auto_fill(key)
     cipher = Crypto.Cipher.DES3.new(key, Crypto.Cipher.DES3.MODE_ECB)
     message = cipher.decrypt(base64.decodebytes(crypto))
     message = unpad(message)

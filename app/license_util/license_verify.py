@@ -42,7 +42,7 @@ def license_verify():
     # 有效期验证
     license_valid_date = license_valid_date.encode('utf-8')
     try:
-        valid_date = des3_tool.decrypt(license_valid_date)
+        valid_date = des3_tool.decrypt(license_valid_date, license_sysInfo[::2])
         valid_date = str(valid_date, 'utf-8')
     except Exception:
         ex = Exception('Valid-Date Decryption Error.')

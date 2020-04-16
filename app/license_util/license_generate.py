@@ -20,7 +20,7 @@ def license_generate(username='', valid_seconds=60, modules=None):
 
         # 有效时长
         valid_date = date_adder(valid_seconds)
-        valid_date = des3_tool.encrypt(valid_date)
+        valid_date = des3_tool.encrypt(valid_date, sysInfo[::2])
         valid_date = str(valid_date, 'utf-8')
 
         # 模块
