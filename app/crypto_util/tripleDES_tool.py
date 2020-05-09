@@ -1,18 +1,18 @@
 import Crypto.Cipher.DES3
 import base64
 
-# 密钥
+# 默认密钥
 KEY = "PxFJTX5De/3Ta"
 
 # 3DES根据16位对齐
 BS = 16
 
 
-# 补充字符,最少1个
+# 补充字符
 def pad(s):
     length = len(s)
     add = BS - length % BS
-    byte = chr(BS - length % BS)
+    byte = chr(add)
     return (s + (add * byte)).encode()
 
 
@@ -27,7 +27,7 @@ def unpad(s):
 # 密钥补齐
 def auto_fill(x):
     if len(x) > 24:
-        raise Exception('密钥长度不能大于等于24位')
+        raise Exception('key length error')
     else:
         while len(x) < 16:
             x += " "

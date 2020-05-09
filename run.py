@@ -1,6 +1,6 @@
 import json
 
-from flask import Flask, render_template, jsonify, request, make_response, current_app, logging
+from flask import Flask, render_template, jsonify, request, make_response, current_app
 from random import *
 from flask_cors import CORS
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
@@ -28,7 +28,6 @@ CORS(app, supports_credentials=True)
 @app.after_request
 def after_request(resp):
     resp = make_response(resp)
-    # resp.headers['Access-Control-Allow-Origin'] = '*'
     resp.headers['Access-Control-Allow-Origin'] = 'http://127.0.0.1:5000'
     resp.headers['Access-Control-Allow-Methods'] = 'GET,POST'
     resp.headers['Access-Control-Allow-Headers'] = 'content-type,Authorization'
@@ -120,7 +119,7 @@ def module_access_check():
     return {'access': False}
 
 
-# 测试接口
+# 能力测试接口——生成随机数
 @app.route('/api/random')
 @auth.login_required
 def random_number():
@@ -169,7 +168,7 @@ class TokenTool:
     def verify_auth_token(token):
         serializer = Serializer(current_app.config['SECRET_KEY'])
         try:
-            user = serializer.loads(token)
+            serializer.loads(token)
         except Exception:
             return False
         return True

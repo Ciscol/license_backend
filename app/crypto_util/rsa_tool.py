@@ -45,15 +45,15 @@ def encrypt(publicKey, message):
     return base64.b64encode(crypto)
 
 
+# 私钥解密
+def decrypt(privateKey, crypto):
+    message = rsa.decrypt(base64.b64decode(crypto), privateKey).decode('utf-8')
+    return message
+
+
 # 签名
 def sign(privateKey, message):
     signature = rsa.sign(message.encode('utf-8'), privateKey, 'SHA-1')
-
-    # with open('signature_file.json', 'w') as f:
-    #     f.write(json.dumps(str(signature)))
-    # signature_str = json.dumps(str(signature), ensure_ascii=False)
-    # print('signature_str:', signature_str)
-
     signature_b64 = base64.b64encode(signature)
     return signature_b64
 
@@ -64,14 +64,8 @@ def sign_verify(publicKey, signature, message):
         signature = base64.b64decode(signature)
         rsa.verify(message.encode('utf-8'), signature, publicKey)
     except Exception:
-        return False
+        raise Exception('signature verify failed.')
     return True
-
-
-# 私钥解密
-def decrypt(privateKey, crypto):
-    message = rsa.decrypt(base64.b64decode(crypto), privateKey).decode('utf-8')
-    return message
 
 
 if __name__ == '__main__':
