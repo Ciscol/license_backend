@@ -21,7 +21,7 @@ pyasn1==0.4.8
 pycodestyle==2.5.0
 pycryptodome==3.9.7
 pylint==2.4.4
-pywin32==227
+pywin32==301
 PyYAML==5.3.1
 requests==2.23.0
 rsa==4.0
